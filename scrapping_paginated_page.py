@@ -9,6 +9,10 @@ import pandas as pd
 import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 start_time = time.time()
 driver = webdriver.Chrome('C:/chromedriver.exe')
@@ -26,6 +30,11 @@ col7List = []
 col8List = []
 col9List = []
 
+fcol1List = []
+fcol2List = []
+fcol3List = []
+fcol4List = []
+fcol5List = []
 
 Case = True
 counter = 0
@@ -34,14 +43,13 @@ while Case:
 	counter += 1
 	time.sleep(2)#delay time requests are sent so we don\'t get kicked by server
 	
-	soup = bs.BeautifulSoup(driver.page_source,"lxml")
-	initial_active_button = soup.find("a", {"class": "ui-state-active"})
+	initial_active_button = bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"})
 	print('Page__',initial_active_button.text,'__')
 
 	selenium_opened_status_link_list = []
 	soup_opened_status_link_list = []
 
-	row = soup.find_all('tr', {'role':'row'})
+	row = bs.BeautifulSoup(driver.page_source,"lxml").find_all('tr', {'role':'row'})
 	# get soup_opened_status_link_list
 
 
@@ -69,8 +77,7 @@ while Case:
 
 		def soup_opened_status_link_list(page_source_x):
 			soup_opened_status_link_list_x = []
-			soup_x = bs.BeautifulSoup(page_source_x,"lxml")
-			row_x = soup_x.find_all('tr', {'role':'row'})
+			row_x = bs.BeautifulSoup(page_source_x,"lxml").find_all('tr', {'role':'row'})
 			for tr_x in row_x:
 				tr_list_x = []
 				td_x = tr_x.find_all('td')
@@ -100,13 +107,13 @@ while Case:
 					
 			datail_page = selenium_opened_status_link_list[number_of_opened_link]
 			datail_page.click()
+			time.sleep(2)
 
 			# col1List = []
 			# col2List = []
 			# col3List = []
-
-			page_soup = bs.BeautifulSoup(driver.page_source,"lxml")
-			row_page = page_soup.find_all('tr', {'role':'row'})
+			row_page = bs.BeautifulSoup(driver.page_source,"lxml").find_all('tr', {'role':'row'})
+			print('Titel:           ____<____',tr_list[1].text,'___>___')
 			for tr_page in row_page:
 				tr_list_page = []
 				td_page = tr_page.find_all('td')
@@ -124,14 +131,21 @@ while Case:
 							td_page_detail_list.append(td_detail_page)
 
 						if len(td_page_detail_list) > 0:
+							# for i in range(len(td_page_detail_list)):
+							# 	print(i,'--)',td_page_detail_list[i-1].text)
 							print('0--)', td_page_detail_list[0].text)
 							print('1--)',td_page_detail_list[1].text)
 							print('2--)',td_page_detail_list[2].text)
+						fcol1List = append(tr_list[0].text.replace('\n', '').replace('\t', ''))
+						fcol2List = append(tr_list[0].text.replace('\n', '').replace('\t', ''))
+						fcol3List = append(tr_list_page[1].text.replace('\n', '').replace('\t', ''))
+						fcol4List = append(td_page_detail_list[0].text.replace('\n', '').replace('\t', ''))
+						fcol5List = append(td_page_detail_list[2].text.replace('\n', '').replace('\t', ''))
 			driver.back()
 			# check in which pahe we stay
-			soup = bs.BeautifulSoup(driver.page_source,"lxml")
-			print('Current page: __',soup.find("a", {"class": "ui-state-active"}).text,'__')
+			print('Current page: __',bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"}).text,'__')
 
+		# print('q1')
 		if len(tr_list) == 9 and (tr_list[0].text.replace('\n', '').replace('\t', '') not in col1List):
 			col1List.append(tr_list[0].text.replace('\n', '').replace('\t', ''))
 			col2List.append(tr_list[1].text.replace('\n', '').replace('\t', ''))
@@ -149,20 +163,39 @@ while Case:
 	# if int(active_button.text) != 1 and int(active_button.text) > 1:
 	# 	driver.find_element_by_xpath("//a[@aria-label='Page "+ str(active_button.text) + "']").click();
 	# 	print('Back to page: __',active_button.text,'__')
-
-		soup = bs.BeautifulSoup(driver.page_source,"lxml")
-		active_button = soup.find("a", {"class": "ui-state-active"})
-
+		# print('q2')
+		active_button = bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"})
 		if int(active_button.text) != int(initial_active_button.text) and int(active_button.text) > 0:
-			a = soup.find_all('a', {'class', 'ui-paginator-page'}).text
-			print(a)
+			print('Go from if ')
+			Button_case = True
+			while Button_case:
+				time.sleep(2)
+				print('Current page: __  ',bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"}).text,'  __LooP')
+				pages_list = [ int(page.text) for page in bs.BeautifulSoup(driver.page_source,"lxml").find_all('a', {'class', 'ui-paginator-page'}) ]
+				print(pages_list)
+				biggest_page = max(pages_list)
+				active_button = bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"})
+				if int(initial_active_button.text) in pages_list:
+					driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)).click()
+					time.sleep(2)
+					print('Current page: __',bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"}).text,'__1')
+					pages_list = []
+					Button_case = False
+				else:
+					driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(biggest_page)).click()
+					pages_list = []
+					del biggest_page
+					time.sleep(2)
+					print('Get to page: __',initial_active_button.text,'__')
+			time.sleep(2)
+		# print('q3')
 			# while initial_active_button.text == active_button.text:
 
 			# driver.find_element_by_xpath("//a[contains(text(), '%s')]" %(initial_active_button.text)).click();
 			# driver.find_element_by_xpath("//a[@class='ui-paginator-page'][text() = '%s')]" %(initial_active_button.text)).click();
-			driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)).click()
-			print('Back to page: __',initial_active_button.text,'__')
-
+			# driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)).click()
+			# print('Back to page: __',initial_active_button.text,'__')
+	# print('q4')
 	selenium_opened_status_link_list = []
 	soup_opened_status_link_list = []
 	driver.find_element_by_class_name("ui-paginator-next").click();
@@ -180,5 +213,14 @@ while Case:
 # df['СРОК ПОДАЧИ КОНКУРСНЫХ ЗАЯВОК'] = pd.Series(col8List)
 # df['Documentation'] = pd.Series(col9List)
 # print(df)
+
+
+df = pd.DataFrame()
+df['ID'] = pd.Series(fcol1List)
+df['НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ'] = pd.Series(fcol2List)
+df['НАИМЕВОНИЕ УЧАСТНИКА'] = pd.Series(fcol3List)
+df['НОМЕР ЛОТА'] = pd.Series(fcol4List)
+df['ПРЕДЛОЖЕННАЯ ЦЕНА'] = pd.Series(fcol5List)
+table = pivot_table(df, index=['НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ', 'НАИМЕВОНИЕ УЧАСТНИКА'])
 
 print("--- Timer %s seconds ---" % (time.time() - start_time))
