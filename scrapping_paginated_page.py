@@ -13,6 +13,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import numpy as np
 
 start_time = time.time()
 driver = webdriver.Chrome('C:/chromedriver.exe')
@@ -38,11 +39,14 @@ fcol5List = []
 
 Case = True
 counter = 0
+wait = WebDriverWait(driver, 10)
 driver.get("http://zakupki.gov.kg/popp/view/order/list.xhtml")
 while Case:	
 	counter += 1
 	time.sleep(2)#delay time requests are sent so we don\'t get kicked by server
+
 	
+
 	initial_active_button = bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"})
 	print('Page__',initial_active_button.text,'__')
 
@@ -106,9 +110,16 @@ while Case:
 			print(number_of_opened_link)
 					
 			datail_page = selenium_opened_status_link_list[number_of_opened_link]
-			datail_page.click()
-			time.sleep(2)
-
+			# element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(By.XPATH, "//a[@class='order-status-opened']"))
+			
+			
+			while True:
+				time.sleep(2)
+				try:
+					datail_page.click()
+					break
+				except:
+					continue
 			# col1List = []
 			# col2List = []
 			# col3List = []
@@ -136,11 +147,11 @@ while Case:
 							print('0--)', td_page_detail_list[0].text)
 							print('1--)',td_page_detail_list[1].text)
 							print('2--)',td_page_detail_list[2].text)
-						fcol1List = append(tr_list[0].text.replace('\n', '').replace('\t', ''))
-						fcol2List = append(tr_list[0].text.replace('\n', '').replace('\t', ''))
-						fcol3List = append(tr_list_page[1].text.replace('\n', '').replace('\t', ''))
-						fcol4List = append(td_page_detail_list[0].text.replace('\n', '').replace('\t', ''))
-						fcol5List = append(td_page_detail_list[2].text.replace('\n', '').replace('\t', ''))
+						# fcol1List.append(tr_list[0].text.replace('\n', '').replace('\t', ''))
+						fcol2List.append(tr_list[1].text.replace('\n', '').replace('\t', ''))
+						fcol3List.append(tr_list_page[1].text.replace('\n', '').replace('\t', ''))
+						fcol4List.append(td_page_detail_list[0].text.replace('\n', '').replace('\t', ''))
+						fcol5List.append(td_page_detail_list[2].text.replace('\n', '').replace('\t', ''))
 			driver.back()
 			# check in which pahe we stay
 			print('Current page: __',bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"}).text,'__')
@@ -176,13 +187,27 @@ while Case:
 				biggest_page = max(pages_list)
 				active_button = bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"})
 				if int(initial_active_button.text) in pages_list:
-					driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)).click()
-					time.sleep(2)
+					while True:
+						time.sleep(2)
+						try:
+							# element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(By.XPATH, "//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)))
+							driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(initial_active_button.text)).click()
+							break
+						except:
+							continue
 					print('Current page: __',bs.BeautifulSoup(driver.page_source,"lxml").find("a", {"class": "ui-state-active"}).text,'__1')
 					pages_list = []
 					Button_case = False
 				else:
-					driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(biggest_page)).click()
+					while True:
+						time.sleep(2)
+						try:
+							# element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(By.XPATH, "//a[contains(@aria-label, 'Page %s')]" %(biggest_page)))
+							driver.find_element_by_xpath("//a[contains(@aria-label, 'Page %s')]" %(biggest_page)).click()
+							break
+						except:
+							continue
+
 					pages_list = []
 					del biggest_page
 					time.sleep(2)
@@ -198,7 +223,17 @@ while Case:
 	# print('q4')
 	selenium_opened_status_link_list = []
 	soup_opened_status_link_list = []
-	driver.find_element_by_class_name("ui-paginator-next").click();
+	while True:
+		time.sleep(2)
+		try:
+			driver.find_element_by_class_name("ui-paginator-next").click()
+			break
+		except:
+			continue
+
+	# driver.implicitly_wait(10)	
+	# element = WebDriverWait(driver, 10).until((EC.element_to_be_clickable(By.XPATH, "//a[@class='ui-paginator-next']")))
+		
 	if counter == 20:
 		Case = False
 
@@ -216,11 +251,25 @@ while Case:
 
 
 df = pd.DataFrame()
-df['ID'] = pd.Series(fcol1List)
+# df['ID'] = pd.Series(fcol1List)
 df['НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ'] = pd.Series(fcol2List)
 df['НАИМЕВОНИЕ УЧАСТНИКА'] = pd.Series(fcol3List)
 df['НОМЕР ЛОТА'] = pd.Series(fcol4List)
 df['ПРЕДЛОЖЕННАЯ ЦЕНА'] = pd.Series(fcol5List)
-table = pivot_table(df, index=['НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ', 'НАИМЕВОНИЕ УЧАСТНИКА'])
+print(df)
 
+
+arrays = [fcol2List, fcol3List, fcol4List, fcol5List]
+tuples = list(zip(*arrays))
+index = pd.MultiIndex.from_tuples(tuples, names=['НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ', 'НАИМЕВОНИЕ УЧАСТНИКА', 'НОМЕР ЛОТА', 'ПРЕДЛОЖЕННАЯ ЦЕНА'])
+s = pd.Series(index=index)
+print(s)
+
+
+writer = pd.ExcelWriter('output.xlsx')
+df.to_excel(writer,'Sheet1')
+s.to_excel(writer,'Sheet2')
+writer.save()
+# table = pd.pivot_table(df, index = 'НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ')
+# print(table)
 print("--- Timer %s seconds ---" % (time.time() - start_time))
